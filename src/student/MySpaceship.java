@@ -74,8 +74,7 @@ public class MySpaceship extends Spaceship {
 		// TODO: Return to Earth
 		Node start = state.currentNode();
 		Node earth = state.getEarth();
-		
-		
+				
 		
 		
 		
