@@ -20,7 +20,7 @@ public class Paths {
     public static List<Node> shortestPath(Node start, Node end) {
         /* TODO Read note A7 FAQs on the course piazza for ALL details. */
         Heap<Node> F= new Heap<Node>(); // As in lecture slides
-
+        
         // map contains an entry for each node in S or F. Thus,
         // |map| = |S| + |F|.
         // For each such key-node, the value part contains the shortest known
