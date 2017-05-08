@@ -72,6 +72,12 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void returnToEarth(ReturnStage state) {
 		// TODO: Return to Earth
+		Node start = state.currentNode();
+		Node earth = state.getEarth();
+		
+		
+		
+		
 		
 		List<Node> optimal_route = Paths.shortestPath(state.currentNode(), state.getEarth());
 		int i = 1;	// optimal_route[0] is the start state	

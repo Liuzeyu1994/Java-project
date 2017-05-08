@@ -28,7 +28,7 @@ public class Paths {
         HashMap<Node, SFdata> map= new HashMap<Node, SFdata>();
 
         F.add(start, 0);
-        map.put(start, new SFdata(0, null));
+        map.put(start, new SFdata(0, null, 1, 0));	// distance(time), bk, speed, num_hostile
         // invariant: as in lecture slides, together with def of F and map
         while (F.size() != 0) {
             Node f= F.poll();
@@ -39,9 +39,39 @@ public class Paths {
                 Node w= e.getOther(f);
                 int newWdist= fDist + e.length;
                 SFdata wData= map.get(w);
-
+                int num_h = 0;
+                double curr_speed = 1;
+                double next_speed = 1;
+                if(wData!=null){
+	                num_h = wData.num_hostile;
+	                curr_speed = wData.speed;
+	                next_speed = curr_speed;
+	                /** update the speed and number of hostile planets visited */
+	                if(w.isHostile()){
+	                	// hostile
+	                	num_h = num_h +1;
+	                	if(w.hasSpeedUpgrade()){
+	                		//has speed upgrade
+	                		if(curr_speed>=1.2){
+	                			next_speed = Math.max(1.0, curr_speed-0.2);
+	                			}
+	                		next_speed = next_speed + 0.2;
+	                	}else{
+	                		if(curr_speed>=1.2){
+	                			next_speed = Math.max(1.0, curr_speed-0.2);
+	                		}
+	                	}
+	                }else{
+	                	// non-hostile
+	                	if(w.hasSpeedUpgrade()){
+	                		next_speed = next_speed + 0.2;
+	                	}
+	                }
+                }
+                
+                
                 if (wData == null) { //if w not in S or F
-                    map.put(w, new SFdata(newWdist, f));
+                    map.put(w, new SFdata(newWdist, f, next_speed, num_h));
                     F.add(w, newWdist);
                 } else if (newWdist < wData.distance) {
                     wData.distance= newWdist;
@@ -94,12 +124,15 @@ public class Paths {
     private static class SFdata {
         private Node backPointer; // backpointer on path from start node to this one
         private int distance; // distance from start node to this one
-
+        private double speed;
+        private int num_hostile;
         /** Constructor: an instance with distance d from the start node and
          *  backpointer p.*/
-        private SFdata(int d, Node p) {
+        private SFdata(int d, Node p, double s, int n) {
             distance= d;     // Distance from start node to this one.
             backPointer= p;  // Backpointer on the path (null if start node)
+            speed = s;
+            num_hostile = n;
         }
 
         /** return a representation of this instance. */
