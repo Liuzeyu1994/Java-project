@@ -15,74 +15,66 @@ import models.ReturnStage;
 /** This class contains Dijkstra's shortest-path algorithm and some other methods. */
 public class Paths {
 
-    /** Return the shortest path from start to end, or the empty list if a path
+	/** Return the shortest path from start to end, or the empty list if a path
      * does not exist.
      * Note: The empty list is NOT "null"; it is a list with 0 elements. */
     public static HashMap<Node, SFdata> shortestPath(Node start, Node end, ReturnStage state) {
         /* TODO Read note A7 FAQs on the course piazza for ALL details. */
         Heap<Node> F= new Heap<Node>(); // As in lecture slides
-        int max_htl = 2;
+        int max_htl = 2;	// the max number of hostile planets that can be visited
         // map contains an entry for each node in S or F. Thus,
         // |map| = |S| + |F|.
         // For each such key-node, the value part contains the shortest known
         // distance to the node and the node's backpointer on that shortest path.
         HashMap<Node, SFdata> map= new HashMap<Node, SFdata>();
-        
+        // Initialize the heap F and HashMap map with default value
+        // Default value of time spent is set to Double.MAX_VALUE
+        // to indicate that it has not been modified
+        // The priority in Heap is the time spent
         for(Node n:state.allNodes()){
         	double[] newWtime_array = {Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE};
         	map.put(n, new SFdata(newWtime_array, null, 0));
         	F.add(n, Double.MAX_VALUE);
         }
+        // Initialize the start node with zero time spent
         F.updatePriority(start, 0);
+        // Start node can visit 2 more remaining hostile planets, the time spent is zero
+        // See the specification for SFdata
         double[] init_time = {Double.MAX_VALUE,Double.MAX_VALUE,0.0};	//[corresponds to hostile visited 0,1,2]
-        map.put(start, new SFdata(init_time, null, 1));	//time), bk, speed
+        map.put(start, new SFdata(init_time, null, 1));	//time, backpointer, speed
         
         // invariant: as in lecture slides, together with def of F and map
         while (F.size() != 0) {
-            Node f= F.poll();
-            //System.out.println("f: "+f + "ID: "+f.getId());
-            
+            Node f= F.poll();           
             if (f == end){
-            	/*
-            	System.out.println(map.get(end).backPointer);
-            	System.out.println(map.get(f).time_tot[0]);
-            	System.out.println(map.get(f).time_tot[1]);
-            	System.out.println(map.get(f).time_tot[2]);   
-            	*/       	
-            	//return constructPath(end, map);
             	if(map.get(end).backPointer!=null){
             		return map;
             	}else{
+            		// No route has been found
+            		// This happens as the backpointer of node end has never been added
             		return new HashMap<Node,SFdata>();
             	}
             	
             }
+            // m is the remaining number of hostile planets that a space at node f can visit
             int m = 0;	// check current m for this node
+            // The time spent associated with node f, with m = 0,1,2.
             double[] f_time = map.get(f).time_tot;
+            // Find m
             while(m<max_htl && f_time[m]==Double.MAX_VALUE){
             	m = m+1;
             }
             
             for (Edge e : f.getExits()) {// for each neighbor w of f
                 Node w= e.getOther(f);
-                if(!F.isInHeap(w)){continue;}	// w not in heap
-                
-                if(w.getId()==0){
-                	int temp = 1;
-                	temp = temp +1;
-                }
-                
-                
-                //System.out.println("w: "+w+"ID: "+w.getId());
-
+                if(!F.isInHeap(w)){
+                	// w not in heap, w has been settled and should not be changed
+                	continue;
+                }	
                 SFdata wData= map.get(w);
-                double curr_speed = map.get(f).speed;
-                double next_speed = curr_speed;
-                if(w.getId()==34){
-            		int temp = 1;
-            		temp = temp + 2;
-            	}
-                /** update the speed and number of hostile planets visited */
+                double curr_speed = map.get(f).speed; //speed at node f
+                double next_speed = curr_speed;	//speed after visiting node w
+                /** update the speed after visiting node w */
                 if(w.isHostile()){
                 	// hostile
                 	if(w.hasSpeedUpgrade()){
@@ -101,16 +93,12 @@ public class Paths {
                 	if(w.hasSpeedUpgrade()){
                 		next_speed = next_speed + 0.2;
                 	}
-                }
-                          
-                double fTime= f_time[m];
-                double newWtime= fTime + e.length/map.get(f).speed;
-                
-                //newWtime= fTime + e.length;
-                
-                int balance = m;	// the remaining number of hostile planet that you can visit
+                }                       
+                double fTime= f_time[m];	//the time spent from start node to node f
+                double newWtime= fTime + e.length/map.get(f).speed;	//the time spent from start node to node w
+                int balance = m;	// the remaining number of hostile planet that node w can visit
                 if(w.isHostile()){balance = balance-1;}
-                
+                // Update Heap and HashMap
                 if (balance>=0 && newWtime < wData.time_tot[balance]) { 
                     wData.time_tot[balance]= newWtime;
                     wData.backPointer= f;
@@ -124,7 +112,6 @@ public class Paths {
         System.out.println("No path found");
         return new HashMap<Node,SFdata>();
     }
-
     /** Return the shortest path from start to end, or the empty list if a path
      * does not exist.
      * Note: The empty list is NOT "null"; it is a list with 0 elements. */

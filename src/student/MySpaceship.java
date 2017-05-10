@@ -22,12 +22,12 @@ public class MySpaceship extends Spaceship {
 	/**
 	 * Extra information about planet we have visited.
 	 */
-	public class Planet{
+	private class Planet{
 		// Unique ID for this planet.
 		Long id;
 		// Unique ID for the planet we visit before this planet.
 		Long past;
-		// The neighbors' id ordered by ping in ascending order.
+		// The neighbors' id ordered by corresponding ping in descending order.
 		Queue<Long> next = new LinkedList<Long>();
 		/**
 		 * Constructor: an instance with planet id ID, previous planet id
@@ -54,36 +54,16 @@ public class MySpaceship extends Spaceship {
 			return next.poll();
 		}
 	}
-	
 	/**
-	 * Explore the galaxy, trying to find the missing spaceship that has crashed
-	 * on Planet X in as little time as possible. Once you find the missing
-	 * spaceship, you must return from the function in order to symbolize that
-	 * you've rescued it. If you continue to move after finding the spaceship
-	 * rather than returning, it will not count. If you return from this
-	 * function while not on Planet X, it will count as a failure.
-	 * 
-	 * At every step, you only know your current planet's ID and the ID of all
-	 * neighboring planets, as well as the ping from the missing spaceship.
-	 * 
-	 * In order to get information about the current state, use functions
-	 * currentLocation(), neighbors(), and getPing() in RescueStage. You know
-	 * you are standing on Planet X when foundSpaceship() is true.
-	 * 
-	 * Use function moveTo(long id) in RescueStage to move to a neighboring
-	 * planet by its ID. Doing this will change state to reflect your new
-	 * position.
+	 * Implementation of rescue() method, version 1.
 	 */
-	@Override
-	public void rescue(RescueStage state) {
-		// TODO : Find the missing spaceship
+	public void rescue_1(RescueStage state){
 		// Store extra information about the planet we have visited.
 		Map<Long,Planet> map = new HashMap<Long,Planet>();
 		// Store id of visited planets.
 		Collection<Long> visited = new ArrayList<Long>();
 		// Initialization
-		Planet start = new Planet(state.currentLocation(), (long) 0, state.neighbors());
-		map.put(state.currentLocation(), start);
+		map.put(state.currentLocation(), new Planet(state.currentLocation(), (long) 0, state.neighbors()));
 		visited.add(state.currentLocation());
 		// Use DFS to search planetX.
 		while(!state.foundSpaceship())
@@ -101,6 +81,8 @@ public class MySpaceship extends Spaceship {
 					now = map.get(now.past);
 					state.moveTo(now.id);
 				}
+				// If this planet has neighbors we have not yet visited,
+				// visit the one with biggest ping value.
 				while(now.hasNext())
 				{
 					next = now.getNext();
@@ -121,6 +103,31 @@ public class MySpaceship extends Spaceship {
 			map.put(next, new Planet(next,now.id,state.neighbors()));
 		}
 		// When we have found planetX, return.
+		return;
+	}
+	
+	/**
+	 * Explore the galaxy, trying to find the missing spaceship that has crashed
+	 * on Planet X in as little time as possible. Once you find the missing
+	 * spaceship, you must return from the function in order to symbolize that
+	 * you've rescued it. If you continue to move after finding the spaceship
+	 * rather than returning, it will not count. If you return from this
+	 * function while not on Planet X, it will count as a failure.
+	 * At every step, you only know your current planet's ID and the ID of all
+	 * neighboring planets, as well as the ping from the missing spaceship.
+	 * 
+	 * In order to get information about the current state, use functions
+	 * currentLocation(), neighbors(), and getPing() in RescueStage. You know
+	 * you are standing on Planet X when foundSpaceship() is true.
+	 * 
+	 * Use function moveTo(long id) in RescueStage to move to a neighboring
+	 * planet by its ID. Doing this will change state to reflect your new
+	 * position.
+	 */
+	@Override
+	public void rescue(RescueStage state) {
+		// TODO : Find the missing spaceship
+		rescue_1(state);
 		return;
 	}
 
@@ -148,9 +155,12 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void returnToEarth(ReturnStage state) {
 		// TODO: Return to Earth
+		// Search a route from Planet X to Earth, with a greedy consideration for hostile planets
 		HashMap map = Paths.shortestPath(state.currentNode(), state.getEarth(), state);
-		List<Node> optimal_route;
+		List<Node> optimal_route;	//optimal route stored as a linked list
 		if(map.isEmpty()){
+			// If has not find a route from Planet X to Earth, reverse the start and end node
+			// The difference is where is to put the hostile planets
 			map = Paths.shortestPath(state.getEarth(),state.currentNode(), state);
 			optimal_route = Paths.constructPath(state.currentNode(), map);
 			int i = optimal_route.size()-2;	// optimal_route[size-1] is the start state	
@@ -165,21 +175,7 @@ public class MySpaceship extends Spaceship {
 				state.moveTo(optimal_route.get(i));
 				i = i+1;
 			}
-		}
-		
-		/*
-		int nhtl = 2;
-		int num_drop = 1;
-		while(map.isEmpty()){
-			map = Paths.shortestPath_nhtl(state.currentNode(), state.getEarth(), state, nhtl, num_drop);
-			num_drop = num_drop+1;
-		}
-		*/
-		
-		
-		
-		
-		
+		}		
 	}
 
 }
