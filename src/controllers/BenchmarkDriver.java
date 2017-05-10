@@ -12,7 +12,7 @@ import student.MySpaceship;
 
 public class BenchmarkDriver extends Driver {
 	public static final long SEED = 91;
-	public static final int N_TRIALS = 4000;
+	public static final int N_TRIALS = 10000;
 
 	public BenchmarkDriver(long seed) {
 		super(seed, new MySpaceship());
@@ -31,6 +31,7 @@ public class BenchmarkDriver extends Driver {
 	public static void main(String[] args) {
 		Random r = new Random(SEED);
 		double sum = 0;
+		
 		HashMap<Double,Long> hm = new HashMap<Double,Long>();
 		
 		PriorityQueue<Double> pq = new PriorityQueue<Double>(201, 
