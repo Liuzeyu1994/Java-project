@@ -12,7 +12,7 @@ import student.MySpaceship;
 
 public class BenchmarkDriver extends Driver {
 	public static final long SEED = 91;
-	public static final int N_TRIALS = 40;
+	public static final int N_TRIALS = 4000;
 
 	public BenchmarkDriver(long seed) {
 		super(seed, new MySpaceship());

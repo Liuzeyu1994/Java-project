@@ -4,6 +4,7 @@ import models.NodeStatus;
 import models.RescueStage;
 import models.ReturnStage;
 import models.Spaceship;
+//import student.Paths.SFdata;
 import models.Node;
 
 import java.util.Stack;
@@ -147,12 +148,35 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void returnToEarth(ReturnStage state) {
 		// TODO: Return to Earth
-		List<Node> optimal_route = Paths.shortestPath(state.currentNode(), state.getEarth(), state);
-		int i = 1;	// optimal_route[0] is the start state	
-		while(!state.currentNode().equals(state.getEarth())){
-			state.moveTo(optimal_route.get(i));
-			i = i+1;
+		HashMap map = Paths.shortestPath(state.currentNode(), state.getEarth(), state);
+		List<Node> optimal_route;
+		if(map.isEmpty()){
+			map = Paths.shortestPath(state.getEarth(),state.currentNode(), state);
+			optimal_route = Paths.constructPath(state.currentNode(), map);
+			int i = optimal_route.size()-2;	// optimal_route[size-1] is the start state	
+			while(!state.currentNode().equals(state.getEarth())){
+				state.moveTo(optimal_route.get(i));
+				i = i-1;
+			}
+		}else{
+			optimal_route = Paths.constructPath(state.getEarth(), map);
+			int i = 1;	// optimal_route[0] is the start state	
+			while(!state.currentNode().equals(state.getEarth())){
+				state.moveTo(optimal_route.get(i));
+				i = i+1;
+			}
 		}
+		
+		/*
+		int nhtl = 2;
+		int num_drop = 1;
+		while(map.isEmpty()){
+			map = Paths.shortestPath_nhtl(state.currentNode(), state.getEarth(), state, nhtl, num_drop);
+			num_drop = num_drop+1;
+		}
+		*/
+		
+		
 		
 		
 		

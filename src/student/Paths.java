@@ -18,7 +18,7 @@ public class Paths {
     /** Return the shortest path from start to end, or the empty list if a path
      * does not exist.
      * Note: The empty list is NOT "null"; it is a list with 0 elements. */
-    public static List<Node> shortestPath(Node start, Node end, ReturnStage state) {
+    public static HashMap<Node, SFdata> shortestPath(Node start, Node end, ReturnStage state) {
         /* TODO Read note A7 FAQs on the course piazza for ALL details. */
         Heap<Node> F= new Heap<Node>(); // As in lecture slides
         int max_htl = 2;
@@ -43,14 +43,35 @@ public class Paths {
             //System.out.println("f: "+f + "ID: "+f.getId());
             
             if (f == end){
-            	//System.out.println(map.get(end).backPointer);
-            	return constructPath(end, map);
+            	/*
+            	System.out.println(map.get(end).backPointer);
+            	System.out.println(map.get(f).time_tot[0]);
+            	System.out.println(map.get(f).time_tot[1]);
+            	System.out.println(map.get(f).time_tot[2]);   
+            	*/       	
+            	//return constructPath(end, map);
+            	if(map.get(end).backPointer!=null){
+            		return map;
+            	}else{
+            		return new HashMap<Node,SFdata>();
+            	}
+            	
             }
-            
+            int m = 0;	// check current m for this node
+            double[] f_time = map.get(f).time_tot;
+            while(m<max_htl && f_time[m]==Double.MAX_VALUE){
+            	m = m+1;
+            }
             
             for (Edge e : f.getExits()) {// for each neighbor w of f
                 Node w= e.getOther(f);
                 if(!F.isInHeap(w)){continue;}	// w not in heap
+                
+                if(w.getId()==0){
+                	int temp = 1;
+                	temp = temp +1;
+                }
+                
                 
                 //System.out.println("w: "+w+"ID: "+w.getId());
 
@@ -81,11 +102,7 @@ public class Paths {
                 		next_speed = next_speed + 0.2;
                 	}
                 }
-                int m = 0;	// check current m for this node
-                double[] f_time = map.get(f).time_tot;
-                while(m<max_htl && f_time[m]==Double.MAX_VALUE){
-                	m = m+1;
-                }          
+                          
                 double fTime= f_time[m];
                 double newWtime= fTime + e.length/map.get(f).speed;
                 
@@ -105,7 +122,124 @@ public class Paths {
 
         // no path from start to end
         System.out.println("No path found");
-        return new LinkedList<Node>();
+        return new HashMap<Node,SFdata>();
+    }
+
+    /** Return the shortest path from start to end, or the empty list if a path
+     * does not exist.
+     * Note: The empty list is NOT "null"; it is a list with 0 elements. */
+    public static HashMap<Node, SFdata> shortestPath_nhtl(Node start, Node end, ReturnStage state, int nhtl, int num_drop) {
+        /* TODO Read note A7 FAQs on the course piazza for ALL details. */
+        Heap<Node> F= new Heap<Node>(); // As in lecture slides
+        int max_htl = nhtl;
+        // count<num_drop, control the number of node to be dropped
+        // these nodes have path that visited nhtl hostile nodes
+        int count = 0;	
+        // map contains an entry for each node in S or F. Thus,
+        // |map| = |S| + |F|.
+        // For each such key-node, the value part contains the shortest known
+        // distance to the node and the node's backpointer on that shortest path.
+        HashMap<Node, SFdata> map= new HashMap<Node, SFdata>();
+        
+        for(Node n:state.allNodes()){
+        	double[] newWtime_array = {Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE};
+        	map.put(n, new SFdata(newWtime_array, null, 0));
+        	F.add(n, Double.MAX_VALUE);
+        }
+        F.updatePriority(start, 0);
+        double[] init_time = {Double.MAX_VALUE,Double.MAX_VALUE,0.0};	//[corresponds to hostile visited 0,1,2]
+        map.put(start, new SFdata(init_time, null, 1));	//time), bk, speed
+        
+        // invariant: as in lecture slides, together with def of F and map
+        while (F.size() != 0) {
+            Node f= F.poll();
+            //System.out.println("f: "+f + "ID: "+f.getId());
+            
+            if (f == end){
+            	/*
+            	System.out.println(map.get(end).backPointer);
+            	System.out.println(map.get(f).time_tot[0]);
+            	System.out.println(map.get(f).time_tot[1]);
+            	System.out.println(map.get(f).time_tot[2]);    
+            	*/
+            	//return constructPath(end, map);
+            	if(map.get(end).backPointer!=null){
+            		return map;
+            	}else{
+            		return new HashMap<Node,SFdata>();
+            	}
+            	
+            }
+            int m = 0;	// check current m for this node
+            double[] f_time = map.get(f).time_tot;
+            while(m<max_htl && f_time[m]==Double.MAX_VALUE){
+            	m = m+1;
+            }
+            if(count<num_drop && m==nhtl){
+            	count = count+1;
+            	continue;
+            	}
+            	
+            for (Edge e : f.getExits()) {// for each neighbor w of f
+                Node w= e.getOther(f);
+                if(!F.isInHeap(w)){continue;}	// w not in heap
+                
+                if(w.getId()==0){
+                	int temp = 1;
+                	temp = temp +1;
+                }
+                
+                
+                //System.out.println("w: "+w+"ID: "+w.getId());
+
+                SFdata wData= map.get(w);
+                double curr_speed = map.get(f).speed;
+                double next_speed = curr_speed;
+                if(w.getId()==34){
+            		int temp = 1;
+            		temp = temp + 2;
+            	}
+                /** update the speed and number of hostile planets visited */
+                if(w.isHostile()){
+                	// hostile
+                	if(w.hasSpeedUpgrade()){
+                		//has speed upgrade
+                		if(curr_speed>=1.2){
+                			next_speed = Math.max(1.0, curr_speed-0.2);
+                			}
+                		next_speed = next_speed + 0.2;
+                	}else{
+                		if(curr_speed>=1.2){
+                			next_speed = Math.max(1.0, curr_speed-0.2);
+                		}
+                	}
+                }else{
+                	// non-hostile
+                	if(w.hasSpeedUpgrade()){
+                		next_speed = next_speed + 0.2;
+                	}
+                }
+                          
+                double fTime= f_time[m];
+                double newWtime= fTime + e.length/map.get(f).speed;
+                
+                //newWtime= fTime + e.length;
+                
+                int balance = m;	// the remaining number of hostile planet that you can visit
+                if(w.isHostile()){balance = balance-1;}
+                
+                if (balance>=0 && newWtime < wData.time_tot[balance]) { 
+                    wData.time_tot[balance]= newWtime;
+                    wData.backPointer= f;
+                    wData.speed = next_speed;
+                    F.updatePriority(w, newWtime);
+                }
+            }
+        }
+
+        // no path from start to end
+        System.out.println("No path found");
+        return new HashMap<Node,SFdata>();
     }
 
 
