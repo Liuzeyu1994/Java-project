@@ -1,15 +1,59 @@
 package student;
 
+import models.NodeStatus;
 import models.RescueStage;
 import models.ReturnStage;
 import models.Spaceship;
 import models.Node;
-import models.NodeStatus;
-import java.util.*;
+
+import java.util.Stack;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /** An instance implements the methods needed to complete the mission */
 public class MySpaceship extends Spaceship {
-
+	/**
+	 * Extra information about planet we have visited.
+	 */
+	public class Planet{
+		// Unique ID for this planet.
+		Long id;
+		// Unique ID for the planet we visit before this planet.
+		Long past;
+		// The neighbors' id ordered by ping in ascending order.
+		Queue<Long> next = new LinkedList<Long>();
+		/**
+		 * Constructor: an instance with planet id ID, previous planet id
+		 * PAST and neighbors' collection neighbors.
+		 */
+		Planet(Long ID, Long PAST, Collection<NodeStatus> neighbors)
+		{
+			id = ID;
+			past = PAST;
+			List<NodeStatus> list = new ArrayList<NodeStatus>();
+			list.addAll(neighbors);
+			Collections.sort(list);
+			for(NodeStatus i : list)
+			{
+				next.add(i.getId());
+			}
+		}
+		/** Return if this planet has unvisited neighbors from itself. */
+		public boolean hasNext(){
+			return !next.isEmpty();
+		}
+		/** Return id of next neighbor to visit. */
+		public long getNext(){
+			return next.poll();
+		}
+	}
+	
 	/**
 	 * Explore the galaxy, trying to find the missing spaceship that has crashed
 	 * on Planet X in as little time as possible. Once you find the missing
@@ -32,19 +76,50 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void rescue(RescueStage state) {
 		// TODO : Find the missing spaceship
-		HashSet visited = new HashSet();	// avoid oscillation in local maxima
-		while(!state.foundSpaceship()){
-			double maxping = Integer.MIN_VALUE;
-			long maxid = state.neighbors().iterator().next().getId();
-			for(NodeStatus ns:state.neighbors()){
-				if(ns.getPingToTarget()>maxping && !visited.contains(ns.getId())){
-					maxping = ns.getPingToTarget();
-					maxid = ns.getId();
+		// Store extra information about the planet we have visited.
+		Map<Long,Planet> map = new HashMap<Long,Planet>();
+		// Store id of visited planets.
+		Collection<Long> visited = new ArrayList<Long>();
+		// Initialization
+		Planet start = new Planet(state.currentLocation(), (long) 0, state.neighbors());
+		map.put(state.currentLocation(), start);
+		visited.add(state.currentLocation());
+		// Use DFS to search planetX.
+		while(!state.foundSpaceship())
+		{
+			// Information about the planet we're on.
+			Planet now = map.get(state.currentLocation());
+			// Search for next planet we should visit.
+			Long next = (long) 0;
+			while(true)
+			{
+				// If we have visited all neighbors of the planet we're on,
+				// return to previous planet we visit.
+				while(!now.hasNext())
+				{
+					now = map.get(now.past);
+					state.moveTo(now.id);
+				}
+				while(now.hasNext())
+				{
+					next = now.getNext();
+					if(!visited.contains(next))
+					{
+						break;
+					}
+				}
+				if(!visited.contains(next))
+				{
+					break;
 				}
 			}
-			visited.add(maxid);
-			state.moveTo(maxid);
+			// Move to next planet.
+			state.moveTo(next);
+			// Update information about the planet we have visited.
+			visited.add(next);
+			map.put(next, new Planet(next,now.id,state.neighbors()));
 		}
+		// When we have found planetX, return.
 		return;
 	}
 
@@ -72,13 +147,7 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void returnToEarth(ReturnStage state) {
 		// TODO: Return to Earth
-		Node start = state.currentNode();
-		Node earth = state.getEarth();
-				
-		
-		
-		
-		List<Node> optimal_route = Paths.shortestPath(state.currentNode(), state.getEarth());
+		List<Node> optimal_route = Paths.shortestPath(state.currentNode(), state.getEarth(), state);
 		int i = 1;	// optimal_route[0] is the start state	
 		while(!state.currentNode().equals(state.getEarth())){
 			state.moveTo(optimal_route.get(i));

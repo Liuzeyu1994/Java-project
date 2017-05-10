@@ -10,6 +10,7 @@ import java.util.Set;
 
 import models.Edge;
 import models.Node;
+import models.ReturnStage;
 
 /** This class contains Dijkstra's shortest-path algorithm and some other methods. */
 public class Paths {
@@ -17,71 +18,93 @@ public class Paths {
     /** Return the shortest path from start to end, or the empty list if a path
      * does not exist.
      * Note: The empty list is NOT "null"; it is a list with 0 elements. */
-    public static List<Node> shortestPath(Node start, Node end) {
+    public static List<Node> shortestPath(Node start, Node end, ReturnStage state) {
         /* TODO Read note A7 FAQs on the course piazza for ALL details. */
         Heap<Node> F= new Heap<Node>(); // As in lecture slides
-        
+        int max_htl = 2;
         // map contains an entry for each node in S or F. Thus,
         // |map| = |S| + |F|.
         // For each such key-node, the value part contains the shortest known
         // distance to the node and the node's backpointer on that shortest path.
         HashMap<Node, SFdata> map= new HashMap<Node, SFdata>();
-
-        F.add(start, 0);
-        map.put(start, new SFdata(0, null, 1, 0));	// distance(time), bk, speed, num_hostile
+        
+        for(Node n:state.allNodes()){
+        	double[] newWtime_array = {Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE};
+        	map.put(n, new SFdata(newWtime_array, null, 0));
+        	F.add(n, Double.MAX_VALUE);
+        }
+        F.updatePriority(start, 0);
+        double[] init_time = {Double.MAX_VALUE,Double.MAX_VALUE,0.0};	//[corresponds to hostile visited 0,1,2]
+        map.put(start, new SFdata(init_time, null, 1));	//time), bk, speed
+        
         // invariant: as in lecture slides, together with def of F and map
         while (F.size() != 0) {
             Node f= F.poll();
-            if (f == end) return constructPath(end, map);
-            int fDist= map.get(f).distance;
+            //System.out.println("f: "+f + "ID: "+f.getId());
+            
+            if (f == end){
+            	//System.out.println(map.get(end).backPointer);
+            	return constructPath(end, map);
+            }
+            
             
             for (Edge e : f.getExits()) {// for each neighbor w of f
                 Node w= e.getOther(f);
-                int newWdist= fDist + e.length;
+                if(!F.isInHeap(w)){continue;}	// w not in heap
+                
+                //System.out.println("w: "+w+"ID: "+w.getId());
+
                 SFdata wData= map.get(w);
-                int num_h = 0;
-                double curr_speed = 1;
-                double next_speed = 1;
-                if(wData!=null){
-	                num_h = wData.num_hostile;
-	                curr_speed = wData.speed;
-	                next_speed = curr_speed;
-	                /** update the speed and number of hostile planets visited */
-	                if(w.isHostile()){
-	                	// hostile
-	                	num_h = num_h +1;
-	                	if(w.hasSpeedUpgrade()){
-	                		//has speed upgrade
-	                		if(curr_speed>=1.2){
-	                			next_speed = Math.max(1.0, curr_speed-0.2);
-	                			}
-	                		next_speed = next_speed + 0.2;
-	                	}else{
-	                		if(curr_speed>=1.2){
-	                			next_speed = Math.max(1.0, curr_speed-0.2);
-	                		}
-	                	}
-	                }else{
-	                	// non-hostile
-	                	if(w.hasSpeedUpgrade()){
-	                		next_speed = next_speed + 0.2;
-	                	}
-	                }
+                double curr_speed = map.get(f).speed;
+                double next_speed = curr_speed;
+                if(w.getId()==34){
+            		int temp = 1;
+            		temp = temp + 2;
+            	}
+                /** update the speed and number of hostile planets visited */
+                if(w.isHostile()){
+                	// hostile
+                	if(w.hasSpeedUpgrade()){
+                		//has speed upgrade
+                		if(curr_speed>=1.2){
+                			next_speed = Math.max(1.0, curr_speed-0.2);
+                			}
+                		next_speed = next_speed + 0.2;
+                	}else{
+                		if(curr_speed>=1.2){
+                			next_speed = Math.max(1.0, curr_speed-0.2);
+                		}
+                	}
+                }else{
+                	// non-hostile
+                	if(w.hasSpeedUpgrade()){
+                		next_speed = next_speed + 0.2;
+                	}
                 }
+                int m = 0;	// check current m for this node
+                double[] f_time = map.get(f).time_tot;
+                while(m<max_htl && f_time[m]==Double.MAX_VALUE){
+                	m = m+1;
+                }          
+                double fTime= f_time[m];
+                double newWtime= fTime + e.length/map.get(f).speed;
                 
+                //newWtime= fTime + e.length;
                 
-                if (wData == null) { //if w not in S or F
-                    map.put(w, new SFdata(newWdist, f, next_speed, num_h));
-                    F.add(w, newWdist);
-                } else if (newWdist < wData.distance) {
-                    wData.distance= newWdist;
+                int balance = m;	// the remaining number of hostile planet that you can visit
+                if(w.isHostile()){balance = balance-1;}
+                
+                if (balance>=0 && newWtime < wData.time_tot[balance]) { 
+                    wData.time_tot[balance]= newWtime;
                     wData.backPointer= f;
-                    F.updatePriority(w, newWdist);
+                    wData.speed = next_speed;
+                    F.updatePriority(w, newWtime);
                 }
             }
         }
 
         // no path from start to end
+        System.out.println("No path found");
         return new LinkedList<Node>();
     }
 
@@ -123,21 +146,19 @@ public class Paths {
      *  of this node from the start node. */
     private static class SFdata {
         private Node backPointer; // backpointer on path from start node to this one
-        private int distance; // distance from start node to this one
+        private double[] time_tot; // total time from start node to this one
         private double speed;
-        private int num_hostile;
         /** Constructor: an instance with distance d from the start node and
          *  backpointer p.*/
-        private SFdata(int d, Node p, double s, int n) {
-            distance= d;     // Distance from start node to this one.
+        private SFdata(double[] t, Node p, double s) {
+            time_tot= t;     // Distance from start node to this one.
             backPointer= p;  // Backpointer on the path (null if start node)
             speed = s;
-            num_hostile = n;
         }
 
         /** return a representation of this instance. */
         public String toString() {
-            return "dist " + distance + ", bckptr " + backPointer;
+            return "dist " + time_tot + ", bckptr " + backPointer;
         }
     }
 }

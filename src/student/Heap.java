@@ -228,6 +228,11 @@ public class Heap<V> {
             bubbleUp(index);
         }
     }
+    /** check if a node is in a Heap*/
+    public boolean isInHeap(V v){
+    	return valPos.containsKey(v);
+    }
+    
 
     /** Create and return an Info array of size n.
      *  This is necessary because Generics and arrays don't interoperate nicely.
