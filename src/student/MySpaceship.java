@@ -57,7 +57,7 @@ public class MySpaceship extends Spaceship {
 	/**
 	 * Implementation of rescue() method, version 1.
 	 */
-	public void rescue_1(RescueStage state){
+	public void rescue_strategy(RescueStage state){
 		// Store extra information about the planet we have visited.
 		Map<Long,Planet> map = new HashMap<Long,Planet>();
 		// Store id of visited planets.
@@ -127,7 +127,7 @@ public class MySpaceship extends Spaceship {
 	@Override
 	public void rescue(RescueStage state) {
 		// TODO : Find the missing spaceship
-		rescue_1(state);
+		rescue_strategy(state);
 		return;
 	}
 
@@ -165,14 +165,22 @@ public class MySpaceship extends Spaceship {
 			optimal_route = Paths.constructPath(state.currentNode(), map);
 			int i = optimal_route.size()-2;	// optimal_route[size-1] is the start state	
 			while(!state.currentNode().equals(state.getEarth())){
-				state.moveTo(optimal_route.get(i));
+				Node next = optimal_route.get(i);
+				state.moveTo(next);
+				if(next.hasSpeedUpgrade()){
+					state.grabSpeedUpgrade();
+				}
 				i = i-1;
 			}
 		}else{
 			optimal_route = Paths.constructPath(state.getEarth(), map);
 			int i = 1;	// optimal_route[0] is the start state	
 			while(!state.currentNode().equals(state.getEarth())){
-				state.moveTo(optimal_route.get(i));
+				Node next = optimal_route.get(i);
+				state.moveTo(next);
+				if(next.hasSpeedUpgrade()){
+					state.grabSpeedUpgrade();
+				}
 				i = i+1;
 			}
 		}		
